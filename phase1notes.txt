@@ -1,0 +1,151 @@
+> Project purpose: Have fun learning AI. Learn how to prompt engineer. Learn branch and repo management
+> Phase 1 goal: Create the initial project design✅. Convert the design into an app✅. Create repository and main branch✅.
+> To create this project I used Figma(free account), Claude Design, and Claude Code.
+
+Figma Prompts:
+1. "Build a journaling app that displays 2 pages, themed like an actual note book. The page will display the date in the top header section of the page. The left and right arrow buttons are at the bottom corners of the pages sitting outside of the journal. Display a journal header centered on the journal. Above the top left corner page display an X icon button, calendar icon button, and gear icon button. Above the top right corner page display a calculator icon button."
+
+2. "Add 2 menu panels to the right and left top side outside of the journal. Round the menu corners
+
+Round the journal corners.
+
+Remove the dots on the side of the journal
+
+Make the left menu display a calendar picker UI
+
+Make the right menu display a calculator UI
+
+Bring the menus closer to the journal, inline with the arrow buttons
+
+Make the menu colors the same as the journal"
+
+---
+>> I then took a screen shot of what figma produced as context for Claude Design.
+---
+
+Claude Design Prompts:
+1. "I want to create a design for a yearly journaling app that can be easily created with claude code. see picture to view starting point.
+
+I would like the arrow buttons to be next to the bottom corners of the pages. Outside the journal to the right and left of the pages.
+
+Then move the menu and calculator on the side next to the top corners of the pages. Outside the journal to the right and left of the pages.
+
+When clicking the calculator icon button, the calculator will slide out from underneath the journal to appear. Clicking it again will make the calculator slide back underneath the journal. The calendar will also show a short list of previous calculation that will only persist for the session that the app has been running. Closing the app and opening again will not retain calculations.
+
+When clicking the calendar button or the gear button, only 1 of the menu can be opened at a time. Clicking 1 while the other is open slides the current opened menu back underneath the journal and the other slide out from underneath the journal.
+
+The calendar button will display a calendar UI to allow the user to select which day/page to navigate to. Add a button in the calendar UI titled "Today" that will automatically take the user to the current day.
+
+The gear icon button will display a settings menu. It will have 10 color themes for the user to chose. Allow user to change text size and font.
+
+Questions answered:
+- spread_meaning: Two consecutive days (left = day N, right = day N+1)
+- persist_entries: Yes — save entries locally so they survive refresh/close
+- default_theme: Yes — warm cream/brown is the default
+- theme_vibe: Warm / cozy (creams, browns, terracotta), Cool / calm (blues, teals, slate), Nature (greens, forest, sage), Dark mode options
+- fonts: Decide for me
+- extras: Clicking the arrow buttons will show 3d page flip animations. clicking left arrow shows page flip to the right. clicking right arrow shows page flip to the left. The page flip will also show the text on the current page moving with the page like a realistic journal.
+
+The journal will be the focal point that will not move at all during page flip animations, menu slide in and out animations.
+
+The app will open in a windowless/borderless mode. 
+
+The app background will be clear/translucent to show the journal as if its hovering on the desktop. Add a shadow to the journal for depth."
+
+---
+>> Since Claude Design created the project in HTML I asked Claude Code to restructure the project in  Electron + React + TypeScript + Vite app using electron-builder for Windows packaging.
+---
+
+Claude Code Prompts:
+1. "Restructure this project to comply with the CLAUDE.md file. Convert the existing plain HTML/CSS/JS into an Electron + React + TypeScript + Vite app using electron-builder for Windows packaging. Preserve all existing functionality from Nostalgic Journal.html, journal.css, and journal.js while migrating the code into the new structure."
+
+--------------------End of Day Notes--------------------
+Final words from Claude Code and follow up question
+
+"What changed
+New structure (matching CLAUDE.md):
+
+
+├── src/
+│   ├── main/main.ts            # Electron main process
+│   ├── preload/preload.ts      # contextBridge (window.api)
+│   ├── shared/ipcChannels.ts   # IPC channel constants
+│   ├── renderer/               # React app
+│   │   ├── App.tsx             # orchestration + 3D page-flip
+│   │   ├── main.tsx
+│   │   ├── components/         # CalendarPanel, SettingsPanel, CalculatorPanel, icons
+│   │   ├── lib/                # dates, constants, storage, calc (pure logic)
+│   │   └── styles/             # index.css (Tailwind) + journal.css (original design)
+│   └── types/global.d.ts       # window.api types
+├── .claude/settings.json       # moved from root
+├── index.html · vite.config.ts · electron-builder.yml
+├── tsconfig.json · tsconfig.node.json · tailwind.config.cjs · postcss.config.cjs · .eslintrc.cjs
+Functionality preserved from the originals: the fixed-scene scaling, 3D page-flip animation (kept imperative via refs + flushSync so it stays flicker-free), localStorage persistence of entries/settings, all 10 themes, font/size settings with live swatch probing, the calendar (month nav, today, day selection), and the session-only calculator with history.
+
+Decisions worth flagging:
+
+Tailwind preflight is disabled (tailwind.config.cjs) so the hand-tuned journal.css isn't clobbered. Tailwind utilities are still available; the original styling is carried over verbatim.
+Output dirs: renderer → out/, main/preload → dist-electron/, and the installer → dist/ (per CLAUDE.md), avoiding a collision.
+Security defaults per CLAUDE.md: contextIsolation: true, nodeIntegration: false, sandbox: true, CJS preload, external links routed through shell.openExternal, plus a CSP that still allows the Google Fonts CDN.
+Verified: npm run typecheck ✅, npm run lint ✅, npm run build ✅ (CSS bundles the full 16 kB of journal styles), and a packaged-startup smoke test of the Electron binary launched without errors.
+
+Two notes for you:
+
+Your environment has ELECTRON_RUN_AS_NODE=1 set globally, which makes npm run dev/Electron crash with Cannot read properties of undefined (reading 'handle'). You'll need that var unset in any shell that launches the app.
+Run npm run dist to generate the NSIS .exe in dist/ — I didn't run full packaging (it downloads electron-builder's win toolchain), so per CLAUDE.md's "test the packaged build before calling a feature done," give the installer a run when convenient.
+---
+>>Follow up question: "If I were to ask you to repeat this task, how can I help you do it more efficiently and in higher quality"
+---
+Claude Code Response:
+"What slowed me down (environment)
+These were the biggest real costs, and they're the easiest for you to fix:
+
+Node wasn't on PATH. It's fnm-managed, so I burned ~4 commands probing C:\Program Files, scoop, nvm, etc. before finding it at …\AppData\Roaming\fnm\node-versions\v22.22.3. If you run me from a shell where node/npm already resolve (or tell me upfront "node is via fnm at X"), that's instant.
+ELECTRON_RUN_AS_NODE=1 is set globally in your environment. It makes Electron run as plain Node, so the launch crashed with Cannot read properties of undefined (reading 'handle') until I diagnosed it. Unsetting that in your profile would remove a sharp edge for any Electron work here.
+I'm saving both of these to memory so I don't re-derive them next time (see below).
+
+Where I made judgment calls you might have opinions on
+"Preserve functionality + comply with CLAUDE.md" left several forks. I picked defensible defaults, but if you have preferences, stating them up front raises quality and avoids rework:
+
+Tailwind: I kept your hand-tuned journal.css verbatim and disabled Tailwind's preflight, rather than rewriting 360 lines of themed CSS as utility classes. If you actually wanted a true Tailwind rewrite, that's a different (much larger, riskier) task.
+Persistence: I kept localStorage in the renderer. CLAUDE.md emphasizes file ops in main via IPC — if you want entries written to disk through the main process, say so.
+Build tool: I chose vite-plugin-electron (fits the required vite.config.ts). electron-vite is the other common pick.
+Fonts: Still loaded from Google Fonts CDN → no offline support. Bundling them locally would be more "desktop-correct."
+I deleted the original .html/.css/.js (assuming "restructure" = replace). Git has them, but worth confirming.
+What would raise quality confidence
+A way to see the UI. I only ran a startup smoke test — the process boots without errors, but I never visually confirmed the flip animation, themes, or layout render correctly. If screenshots/screen access are available, I'd verify pixel parity against your screenshots/ folder.
+Running npm run dist. I stopped short of full packaging (it downloads electron-builder's Windows toolchain). If you want the verified .exe, tell me to go all the way.
+The single highest-leverage thing
+A one-line "how to run things here" note in CLAUDE.md — Node path + the ELECTRON_RUN_AS_NODE caveat + your stance on the Tailwind/persistence forks — would eliminate ~80% of the friction and ambiguity.
+
+Let me persist the environment facts so the next run is faster:
+
+Read c:\Users\Thanh Tran\.claude\projects\c--Users-Thanh-Tran-Documents-Nostalgic-Journal\memory\MEMORY.md
+Write c:\Users\Thanh Tran\.claude\projects\c--Users-Thanh-Tran-Documents-Nostalgic-Journal\memory\env-running-node-electron.md
+16 lines
+---
+name: env-running-node-electron
+description: How to run Node/npm/Electron in this environment (PATH + ELECTRON_RUN_AS_NODE gotcha)
+metadata:
+  type: project
+---
+
+`node`/`npm` are NOT on PATH by default — Node is fnm-managed. Prepend this to PATH before any npm/node/electron command (version may change; check `$env:APPDATA\fnm\node-versions`):
+
+`$env:Path = "$env:APPDATA\fnm\node-versions\v22.22.3\installation;" + $env:Path`
+
+The environment sets `ELECTRON_RUN_AS_NODE=1` globally, which makes Electron run as plain Node — `require('electron')` returns a path string and the app crashes with `Cannot read properties of undefined (reading 'handle')`. Before launching Electron (dev or packaged), clear it: `Remove-Item Env:\ELECTRON_RUN_AS_NODE`.
+
+**Why:** Both cost several diagnostic round-trips during the React/Electron migration.
+**How to apply:** Run npm/electron via the PowerShell tool with PATH prepended; clear ELECTRON_RUN_AS_NODE in the same call before any `electron .` launch or `npm run dev`.
+Write c:\Users\Thanh Tran\.claude\projects\c--Users-Thanh-Tran-Documents-Nostalgic-Journal\memory\MEMORY.md
+2 lines
+- [Running Node/Electron here](env-running-node-electron.md) — fnm PATH prefix + must clear ELECTRON_RUN_AS_NODE before launching Electron
+Saved the environment quirks to memory so the next run skips the diagnostic round-trips.
+
+TL;DR of how you can help most:
+
+Run me from a shell where node/npm resolve (or note the fnm path) — now saved.
+Unset ELECTRON_RUN_AS_NODE globally — worked around, now saved.
+Up front, state your stance on the forks: Tailwind (keep original CSS vs. true rewrite), persistence (localStorage vs. IPC-to-disk), and whether to delete originals and run full npm run dist.
+If you can give me screen/screenshot access, I can verify the UI visually instead of just smoke-testing startup.
