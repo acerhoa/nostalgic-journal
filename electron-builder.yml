@@ -1,0 +1,31 @@
+appId: com.acerhoa.nostalgicjournal
+productName: Nostalgic Journal
+copyright: Copyright © 2026 acerhoa
+
+directories:
+  output: dist
+  buildResources: build
+
+files:
+  - out/**/*
+  - dist-electron/**/*
+  - package.json
+
+# The renderer bundle and Electron entry points are pre-built by Vite, so no
+# native dependencies need rebuilding here.
+asar: true
+
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+  artifactName: ${productName}-${version}-setup.${ext}
+
+nsis:
+  oneClick: false
+  perMachine: false
+  allowToChangeInstallationDirectory: true
+  createDesktopShortcut: true
+  createStartMenuShortcut: true
+  shortcutName: Nostalgic Journal

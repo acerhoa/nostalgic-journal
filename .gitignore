@@ -1,0 +1,11 @@
+node_modules/
+dist/
+dist-electron/
+out/
+.env
+.env.*
+.claude/settings.local.json
+*.log
+.DS_Store
+Thumbs.db
+.thumbnail
