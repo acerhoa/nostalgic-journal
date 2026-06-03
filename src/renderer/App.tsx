@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState, type MouseEvent as ReactMouseEvent } from 'react';
 import { flushSync } from 'react-dom';
 import {
-  SIZES,
+  LINE_HEIGHT_RATIO,
   THEMES,
   type Settings,
-  type SizeKey,
 } from './lib/constants';
 import {
   TODAY,
@@ -22,7 +21,7 @@ import {
   type Entries,
 } from './lib/storage';
 import { INITIAL_CALC, calcInput, type CalcState, type HistRow } from './lib/calc';
-import { CalendarIcon, CalcIcon, ChevronLeft, ChevronRight, GearIcon } from './components/icons';
+import { CalendarIcon, CalcIcon, ChevronLeft, ChevronRight, GearIcon, CloseIcon } from './components/icons';
 import CalendarPanel from './components/CalendarPanel';
 import SettingsPanel, { type ThemeVars } from './components/SettingsPanel';
 import CalculatorPanel from './components/CalculatorPanel';
@@ -31,6 +30,10 @@ type LeftPanel = 'cal' | 'set' | null;
 
 // How far the panels tuck under the journal when closed (px).
 const PANEL_HIDE = 312;
+
+// Minimum journal dimensions (ensures calculator never overlaps arrow button).
+const MIN_PAGE_W = 392;
+const MIN_PAGE_H = 520;
 
 export default function App() {
   /* ---------- persistent + view state ---------- */
@@ -50,8 +53,12 @@ export default function App() {
   const [calc, setCalc] = useState<CalcState>(INITIAL_CALC);
   const [history, setHistory] = useState<HistRow[]>([]);
 
+  // Journal size state for resizing.
+  const [pageW, setPageW] = useState(MIN_PAGE_W);
+  const [pageH, setPageH] = useState(MIN_PAGE_H);
+  const resizeRef = useRef<{ startX: number; startY: number; startW: number; startH: number; corner: string } | null>(null);
+
   /* ---------- refs (used by the imperative 3D page flip) ---------- */
-  const sceneRef = useRef<HTMLDivElement>(null);
   const leafRef = useRef<HTMLDivElement>(null);
   const leafFrontRef = useRef<HTMLDivElement>(null);
   const leafBackRef = useRef<HTMLDivElement>(null);
@@ -80,9 +87,8 @@ export default function App() {
     const root = document.documentElement;
     root.dataset.theme = settings.theme;
     root.style.setProperty('--font-write', settings.font);
-    const [fs, lh] = SIZES[settings.size];
-    root.style.setProperty('--write-size', fs);
-    root.style.setProperty('--line-h', lh);
+    root.style.setProperty('--write-size', `${settings.textSize}px`);
+    root.style.setProperty('--line-h', `${Math.round(settings.textSize * LINE_HEIGHT_RATIO)}px`);
     saveSettings(settings);
   }, [settings]);
 
@@ -104,23 +110,13 @@ export default function App() {
     setThemeVars(vars);
   }, []);
 
-  /* ---------- scene scaling ---------- */
-  useEffect(() => {
-    const fit = () => {
-      const s = Math.min(window.innerWidth / 1440, window.innerHeight / 780, 1.15);
-      if (sceneRef.current) {
-        sceneRef.current.style.transform = `translate(-50%,-50%) scale(${s})`;
-      }
-    };
-    fit();
-    window.addEventListener('resize', fit);
-    return () => window.removeEventListener('resize', fit);
-  }, []);
+  /* ---------- scene scaling (disabled for transparent window) ---------- */
+  // With a transparent, resizable window, we don't auto-scale the scene.
 
   /* ============================================================
      3D PAGE FLIP
      ============================================================ */
-  // Static markup used on the flipping leaf faces — mirrors the live page.
+  // Static markup for the flipping leaf faces.
   const faceHTML = useCallback((idx: number): string => {
     const isToday = idx === TODAY;
     const txt = entriesRef.current[keyOf(idx)] || '';
@@ -262,6 +258,65 @@ export default function App() {
     setCalc({ acc: null, op: null, cur: history[i].res, fresh: true });
   };
 
+  /* ---------- window controls ---------- */
+  const handleClose = () => {
+    window.api.closeWindow();
+  };
+
+  /* ---------- corner resize ---------- */
+  const startResize = async (e: ReactMouseEvent, corner: string) => {
+    e.preventDefault();
+    const winSize = await window.api.getWindowSize();
+    resizeRef.current = {
+      startX: e.clientX,
+      startY: e.clientY,
+      startW: pageW,
+      startH: pageH,
+      corner,
+    };
+    const startWinW = winSize.width;
+    const startWinH = winSize.height;
+
+    const onMove = (ev: globalThis.MouseEvent) => {
+      if (!resizeRef.current) return;
+      const { startX, startY, startW, startH, corner: c } = resizeRef.current;
+      const dx = ev.clientX - startX;
+      const dy = ev.clientY - startY;
+
+      let newW = startW;
+      let newH = startH + dy;
+
+      if (c === 'bl') {
+        newW = startW - dx;
+      } else {
+        newW = startW + dx;
+      }
+
+      newW = Math.max(MIN_PAGE_W, newW);
+      newH = Math.max(MIN_PAGE_H, newH);
+
+      const deltaW = (newW - startW) * 2; // journal width change (2 pages)
+      const deltaH = newH - startH;
+
+      setPageW(newW);
+      setPageH(newH);
+
+      // Update window size proportionally to the journal size change.
+      const windowW = startWinW + deltaW;
+      const windowH = startWinH + deltaH;
+      window.api.setWindowSize(Math.max(900, windowW), Math.max(600, windowH));
+    };
+
+    const onUp = () => {
+      resizeRef.current = null;
+      document.removeEventListener('mousemove', onMove);
+      document.removeEventListener('mouseup', onUp);
+    };
+
+    document.addEventListener('mousemove', onMove);
+    document.addEventListener('mouseup', onUp);
+  };
+
   /* ---------- derived render values ---------- */
   const rightIndex = leftIndex + 1;
   const calOpen = leftPanel === 'cal';
@@ -274,11 +329,58 @@ export default function App() {
     transform: open ? 'translateX(0px)' : `translateX(${-PANEL_HIDE}px)`,
   });
 
+  // Dynamic styles based on journal size.
+  const journalStyle = {
+    '--page-w': `${pageW}px`,
+    '--page-h': `${pageH}px`,
+  } as React.CSSProperties;
+
   return (
     <div className="viewport">
-      <div className="scene" id="scene" ref={sceneRef}>
-        {/* bookmark tab */}
-        <div className="tab">My Journal</div>
+      <div className="scene" id="scene" style={journalStyle}>
+        {/* bookmark tab (draggable for window movement) */}
+        <div className="tab drag-region">
+          {settings.journalTitle || 'My Journal'}
+        </div>
+
+        {/* CONTROLS — X/Calendar/Gear to right of header, Calculator to left */}
+        <div className="controls-right">
+          <button
+            className="btn square"
+            id="btn-close"
+            aria-label="Close"
+            onClick={handleClose}
+          >
+            <CloseIcon />
+          </button>
+          <button
+            className={`btn square${calOpen ? ' is-on' : ''}`}
+            id="btn-cal"
+            aria-label="Calendar"
+            onClick={() => toggleLeftPanel('cal')}
+          >
+            <CalendarIcon />
+          </button>
+          <button
+            className={`btn square${setOpen ? ' is-on' : ''}`}
+            id="btn-set"
+            aria-label="Settings"
+            onClick={() => toggleLeftPanel('set')}
+          >
+            <GearIcon />
+          </button>
+        </div>
+
+        <div className="controls-left">
+          <button
+            className={`btn square${calcOpen ? ' is-on' : ''}`}
+            id="btn-calc"
+            aria-label="Calculator"
+            onClick={() => setCalcOpen((v) => !v)}
+          >
+            <CalcIcon />
+          </button>
+        </div>
 
         {/* THE JOURNAL (fixed centre) */}
         <div className="journal" id="journal">
@@ -292,7 +394,6 @@ export default function App() {
                 className="sheet"
                 id="leftText"
                 ref={leftTextRef}
-                placeholder="Write your thoughts…"
                 spellCheck={false}
                 value={entries[keyOf(leftIndex)] || ''}
                 onChange={(e) => updateEntry(leftIndex, e.target.value)}
@@ -310,7 +411,6 @@ export default function App() {
                 className="sheet"
                 id="rightText"
                 ref={rightTextRef}
-                placeholder="Continue writing…"
                 spellCheck={false}
                 value={entries[keyOf(rightIndex)] || ''}
                 onChange={(e) => updateEntry(rightIndex, e.target.value)}
@@ -324,33 +424,19 @@ export default function App() {
             <div className="face back page" id="leafBack" ref={leafBackRef} />
             <div className="shade" />
           </div>
+
+          {/* resize handles */}
+          <div
+            className="resize-handle resize-bl"
+            onMouseDown={(e) => startResize(e, 'bl')}
+          />
+          <div
+            className="resize-handle resize-br"
+            onMouseDown={(e) => startResize(e, 'br')}
+          />
         </div>
 
-        {/* CONTROLS */}
-        <button
-          className={`btn square${calOpen ? ' is-on' : ''}`}
-          id="btn-cal"
-          aria-label="Calendar"
-          onClick={() => toggleLeftPanel('cal')}
-        >
-          <CalendarIcon />
-        </button>
-        <button
-          className={`btn square${setOpen ? ' is-on' : ''}`}
-          id="btn-set"
-          aria-label="Settings"
-          onClick={() => toggleLeftPanel('set')}
-        >
-          <GearIcon />
-        </button>
-        <button
-          className={`btn square${calcOpen ? ' is-on' : ''}`}
-          id="btn-calc"
-          aria-label="Calculator"
-          onClick={() => setCalcOpen((v) => !v)}
-        >
-          <CalcIcon />
-        </button>
+        {/* Navigation arrows */}
         <button className="btn round" id="btn-prev" aria-label="Previous page" onClick={() => flip(-1)}>
           <ChevronLeft />
         </button>
@@ -383,8 +469,9 @@ export default function App() {
             settings={settings}
             themeVars={themeVars}
             onTheme={(theme) => setSettings((s) => ({ ...s, theme }))}
-            onSize={(size: SizeKey) => setSettings((s) => ({ ...s, size }))}
+            onTextSize={(textSize) => setSettings((s) => ({ ...s, textSize }))}
             onFont={(font) => setSettings((s) => ({ ...s, font }))}
+            onTitle={(journalTitle) => setSettings((s) => ({ ...s, journalTitle }))}
           />
         </div>
 

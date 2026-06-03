@@ -12,7 +12,6 @@ export default function CalculatorPanel({ calc, history, onKey, onPickHist }: Pr
 
   return (
     <>
-      <h3>Calculator</h3>
       <div className="calc-display">
         <div className="calc-expr" id="calc-expr">{expr}</div>
         <div className="calc-val" id="calc-val">{calc.cur}</div>

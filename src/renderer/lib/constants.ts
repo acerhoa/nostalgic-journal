@@ -1,16 +1,19 @@
-export type SizeKey = 's' | 'm' | 'l';
-
 export interface Settings {
   theme: string;
   font: string;
-  size: SizeKey;
+  textSize: number; // 14-24px range
+  journalTitle: string;
 }
 
 export const DEFAULT_SETTINGS: Settings = {
   theme: 'cream',
   font: "'Lora', Georgia, serif",
-  size: 'm',
+  textSize: 17,
+  journalTitle: 'My Journal',
 };
+
+export const TEXT_SIZE_MIN = 14;
+export const TEXT_SIZE_MAX = 24;
 
 export const THEMES: ReadonlyArray<[string, string]> = [
   ['cream', 'Cream & Cocoa'],
@@ -33,12 +36,8 @@ export const FONTS: ReadonlyArray<[string, string]> = [
   ["'Nunito', sans-serif", 'Nunito — clean sans'],
 ];
 
-// [font-size, line-height]
-export const SIZES: Record<SizeKey, [string, string]> = {
-  s: ['15px', '26px'],
-  m: ['17px', '30px'],
-  l: ['20px', '34px'],
-};
+// Line height multiplier for text size
+export const LINE_HEIGHT_RATIO = 1.76;
 
 export const MONTHS = [
   'January', 'February', 'March', 'April', 'May', 'June',

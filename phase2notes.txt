@@ -1,0 +1,109 @@
+> Phase 2 Goal:
+1. UI overhaul. Looks terrible with current layout and window border
+2. Journal header has to be editable
+3. Close journal button
+4. Additional creative features
+
+Claude Code Prompts:
+
+1. "Read Claude.md then make these changes to the Nostalgic Journal project
+
+UI overhaul:
+1. Remove the app window border.
+2. Remove the background. Make it clear/empty. I want to be able to look through the app background and view desktop wallpaper and apps behind it when running.
+3. Move the journal header "My Journal" Hovering above the journal.
+4. Make the header corner edges evenly rounded on all sides. Similar to the buttons.
+5. Add an X icon button to the left of the Calendar button.
+6. Move the X/Calendar/Gear buttons to the right. The X button left side will be inlign with the left page edge
+7. Move the Calculator button to the left. Its side will be inlign with the right page edge
+8. Remove pretexts "Write your thoughts" and "Continue writing"
+9. Make the scroll bars that appears in the journal and calculator results history prettier
+10. Increase the overall size of the journal while keeping the rest of the UI the same size. Bigger pages.
+10. Reduce the window size so that its just enough to view the journal with both menus opened on both sides
+11. Remove the word "Calcuator" in the calcuator menu. 
+
+Additional Features:
+1. The X button will close out the app 
+2. Add a field in the gear menu to allow users to change journal header. Set a max limit of 20 characters.
+3. Make the journal header a draggable area that can move the app around the desktop
+4. Make the bottom corners draggable to expand the journal horizontally and vertically. The window will auto expand/reduce with the journal when dragging the corners.
+5. Set the smallest journal size length to be at a length where the calculator menu never overlaps the arrow button.
+6. Set the smallest journal size width to be at the current width before the overhaul
+
+Bug to fix:
+1. Flipping page animation is flipping the text visually on the page (making them backwards) before the flip animation. The text has to be shown in the same orientation before, during, and after the animation.
+
+After Build make sure to test for:
+- Jitteryness in UI
+- Text calrity in UI
+- Bugs
+
+Add any small improvements along the way that does not obstruct the features or UI. IE additional features for journaling"
+
+---
+It was a mess. I'm pissed. Probably most at myself 
+---
+
+
+2. "This looks horrible
+
+Bugs:
+- The window size is not adjusting with the journal when dragging the corners. This was mentioned in the original instruction
+- The buttons are not not aligned with the page at all. See the second picture with blue line to indicate the page edge. This was mentioned in the original instruction
+- The side menu size are at the full length of the journal now, what the f is this... return it to its normal size
+- The side menus are adjusting their size with the journal when dragging the corner to adjust their size. they have to stay the same size no matter what like the buttons.
+- The bottom right corner button is overlapping the journal now. this is so bad"
+
+3."- add a temporary background color so that the default window size can be view during testing
+
+- Reduce the side menus size to their standard size."
+
+4. "- expand the default window size so that the side menus can be viewed in full
+- Reduce the defaul window size so that it wraps right on the edges of the app when all menus are open"
+
+5. "bugs:
+- Page flip is showing the ldate on the back of the page being flip shown in reverse then flip back correctly after page lands. Fix that. Make the page flip as realistic as possible.
+
+Change:
+- All text in app will be shown in the selected font EXCEPT: Font button options, Calculator numbers, Calendar numbers.
+- Make the buttons have an opacity of 50%
+- Change the Journal header title UI to align with button
+
+Add:
+- Text size slider in settings menu
+
+Remove:
+- Text Size button options in settings menu
+
+Edits: 
+- Change the corner drag icons to be more subtle
+- Beautify the app. Goal is the make the journal visually asthetic and pleasing like the edit above
+
+Project improvements
+- Alter the project structure so that when we pick up next time you will understand the concept, goal, and project structure faster and efficiently to not waste tokens"
+
+6. "-Page flip is still broken. When the button is clicked(right arrow), the page flips over from right to left, the back of the page that flips over shows the date mirrored and on the right corner, after the page lands to the left, the date then un-mirrors its self, then moves to the left jarringly"
+
+7. "- I want whats on the back of the page (text,date) bring turned over to show on the page while its turning, in its correct orrientation. Along with the page lines. Right now its showing nothing"
+
+---
+AI is so stupid. Im not mad at myself. This fkin creadit hungry hoe
+---
+
+8. "-Page flip is still broken. When the button is clicked(right arrow), the page flips over from right to left, the back of the page that flips over shows the date and text mirrored and on the right, after the page lands to the left, the date and text then un-mirrors its self jarringly"
+
+9. "- its still broken"
+
+---
+It tried fixing it again and its still broken. Working with AI is EErily similar to working with a dev
+---
+
+10. "You have failed at fixing this issue 3 times now. Lets stop and we still resume tomorrow. 
+
+Create a new txt file and outline what we have worked on today and the outstanding issues"
+
+TO DO in Phase 3:
+- Fix the bug
+- Figure out what is next to make this app installable
+- More features?
+- UI changes?
