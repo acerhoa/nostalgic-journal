@@ -10,13 +10,17 @@ let mainWindow: BrowserWindow | null = null;
 
 function createWindow(): void {
   mainWindow = new BrowserWindow({
-    width: 1280,
-    height: 800,
-    minWidth: 900,
-    minHeight: 640,
+    width: 1320,
+    height: 600,
+    minWidth: 1100,
+    minHeight: 600,
     title: 'Nostalgic Journal',
-    backgroundColor: '#efddc4',
+    frame: false,
+    transparent: true,
+    backgroundColor: '#00000000',
+    hasShadow: false,
     autoHideMenuBar: true,
+    resizable: true,
     webPreferences: {
       preload: path.join(__dirname, 'preload.js'),
       // Security: keep Node out of the renderer and isolate the bridge.
@@ -45,10 +49,30 @@ function createWindow(): void {
   });
 }
 
-// --- IPC handlers ---
-ipcMain.handle(IpcChannels.GET_APP_VERSION, () => app.getVersion());
-
 app.whenReady().then(() => {
+  // --- IPC handlers ---
+  ipcMain.handle(IpcChannels.GET_APP_VERSION, () => app.getVersion());
+
+  ipcMain.on(IpcChannels.WINDOW_CLOSE, () => {
+    mainWindow?.close();
+  });
+
+  ipcMain.on(IpcChannels.WINDOW_START_DRAG, () => {
+    // Workaround: Electron doesn't have a native startDrag for frameless windows
+    // We handle this via -webkit-app-region in CSS instead
+  });
+
+  ipcMain.handle(IpcChannels.WINDOW_GET_SIZE, () => {
+    if (!mainWindow) return { width: 1100, height: 720 };
+    const [width, height] = mainWindow.getSize();
+    return { width, height };
+  });
+
+  ipcMain.handle(IpcChannels.WINDOW_SET_SIZE, (_event, width: number, height: number) => {
+    if (!mainWindow) return;
+    mainWindow.setSize(Math.round(width), Math.round(height));
+  });
+
   createWindow();
 
   app.on('activate', () => {

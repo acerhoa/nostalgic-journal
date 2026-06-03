@@ -149,3 +149,9 @@ Run me from a shell where node/npm resolve (or note the fnm path) — now saved.
 Unset ELECTRON_RUN_AS_NODE globally — worked around, now saved.
 Up front, state your stance on the forks: Tailwind (keep original CSS vs. true rewrite), persistence (localStorage vs. IPC-to-disk), and whether to delete originals and run full npm run dist.
 If you can give me screen/screenshot access, I can verify the UI visually instead of just smoke-testing startup.
+
+TO DO in Phase 2:
+1. UI overhaul. Looks terrible with current layout and window border
+2. Journal header has to be editable
+3. Close journal button
+4. Additional creative features

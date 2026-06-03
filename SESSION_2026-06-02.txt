@@ -1,0 +1,93 @@
+SESSION: June 2, 2026
+======================
+
+COMPLETED WORK
+--------------
+
+1. UI Overhaul (from earlier session)
+   - Frameless transparent window
+   - Journal header moved above journal with rounded corners
+   - X/Calendar/Gear buttons repositioned to left of header
+   - Calculator button repositioned to right of header
+   - Removed textarea placeholders
+   - Styled scrollbars
+   - Removed "Calculator" title from calculator panel
+
+2. Button Styling
+   - Opacity reduced to 50% (hover: 85%, active: 100%, is-on: 90%)
+   - Slightly smaller buttons (42px squares, 44px rounds)
+   - Header tab aligned to match button height (42px) and border-radius (11px)
+
+3. Text Size Slider
+   - Replaced Small/Medium/Large buttons with a slider (14-24px range)
+   - Updated Settings interface: size: SizeKey -> textSize: number
+   - Line height calculated dynamically from text size
+
+4. Font Usage
+   - Body now uses selected font (--font-write)
+   - Exceptions added for: font options, calculator numbers, calendar numbers (use --font-ui)
+
+5. Resize Handles
+   - Made subtle with diagonal lines
+   - Only appear when hovering over journal
+   - Lines animate to accent color on hover
+
+6. Project Documentation
+   - Created ARCHITECTURE.md with complete project structure
+
+7. Window Sizing
+   - Default: 1320x600
+   - Minimum: 1100x600
+   - Temporary gray background added for testing window bounds
+
+8. Panel Sizing
+   - Changed panels from full journal height to auto height (content-based)
+   - max-height set to --panel-h (520px)
+
+
+OUTSTANDING ISSUES
+------------------
+
+1. PAGE FLIP ANIMATION (CRITICAL)
+   The back face of the flipping page shows content mirrored/incorrectly positioned.
+
+   What should happen:
+   - Click right arrow -> right page flips left
+   - Back of page should show the INCOMING page content (next left page)
+   - Content should be correctly oriented (date on left, text readable)
+   - When page lands, it should seamlessly match the live page
+
+   What's happening:
+   - Back face shows date/text mirrored and positioned wrong
+   - After page lands, content "jumps" to correct position
+
+   Attempts made:
+   - scaleX(-1) on back face content wrapper - didn't work
+   - scaleX(-1) on individual children - didn't work
+   - Combined rotateY(180deg) scaleX(-1) on .face.back - didn't work
+
+   Root cause: The CSS 3D transform math for the back face isn't correctly
+   accounting for both the rotation AND the content mirroring needed.
+
+   Possible solutions to try:
+   - Research CSS 3D card flip examples that show content on both sides
+   - Try transform-style: flat on the back face
+   - Try applying the scaleX at the leaf level instead of face level
+   - Consider if the transform-origin is affecting the mirror
+
+
+FILES MODIFIED TODAY
+--------------------
+- src/main/main.ts (window size)
+- src/renderer/App.tsx (settings, faceHTML function)
+- src/renderer/styles/journal.css (buttons, slider, resize handles, flip-leaf)
+- src/renderer/components/SettingsPanel.tsx (slider instead of buttons)
+- src/renderer/lib/constants.ts (textSize instead of size)
+- ARCHITECTURE.md (new)
+- SESSION_2026-06-02.txt (this file)
+
+
+TEMP CHANGES TO REMOVE LATER
+----------------------------
+- Viewport has gray background for testing: .viewport{ background: rgba(100,100,100,0.5); }
+  Location: src/renderer/styles/journal.css line ~43

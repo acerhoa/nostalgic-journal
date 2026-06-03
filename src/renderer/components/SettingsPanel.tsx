@@ -1,4 +1,4 @@
-import { THEMES, FONTS, type Settings, type SizeKey } from '../lib/constants';
+import { THEMES, FONTS, TEXT_SIZE_MIN, TEXT_SIZE_MAX, type Settings } from '../lib/constants';
 
 export interface ThemeVars {
   paper: string;
@@ -9,20 +9,27 @@ interface Props {
   settings: Settings;
   themeVars: Record<string, ThemeVars>;
   onTheme: (theme: string) => void;
-  onSize: (size: SizeKey) => void;
+  onTextSize: (size: number) => void;
   onFont: (font: string) => void;
+  onTitle: (title: string) => void;
 }
 
-const SIZE_OPTS: ReadonlyArray<[SizeKey, string]> = [
-  ['s', 'Small'],
-  ['m', 'Medium'],
-  ['l', 'Large'],
-];
-
-export default function SettingsPanel({ settings, themeVars, onTheme, onSize, onFont }: Props) {
+export default function SettingsPanel({ settings, themeVars, onTheme, onTextSize, onFont, onTitle }: Props) {
   return (
     <>
       <h3>Settings</h3>
+
+      <div className="set-group">
+        <div className="set-label">Journal Title</div>
+        <input
+          type="text"
+          className="title-input"
+          value={settings.journalTitle}
+          maxLength={20}
+          placeholder="My Journal"
+          onChange={(e) => onTitle(e.target.value)}
+        />
+      </div>
 
       <div className="set-group">
         <div className="set-label">Color theme</div>
@@ -45,18 +52,15 @@ export default function SettingsPanel({ settings, themeVars, onTheme, onSize, on
       </div>
 
       <div className="set-group">
-        <div className="set-label">Text size</div>
-        <div className="seg" id="set-size">
-          {SIZE_OPTS.map(([size, label]) => (
-            <button
-              key={size}
-              className={settings.size === size ? 'sel' : undefined}
-              onClick={() => onSize(size)}
-            >
-              {label}
-            </button>
-          ))}
-        </div>
+        <div className="set-label">Text size — {settings.textSize}px</div>
+        <input
+          type="range"
+          className="size-slider"
+          min={TEXT_SIZE_MIN}
+          max={TEXT_SIZE_MAX}
+          value={settings.textSize}
+          onChange={(e) => onTextSize(Number(e.target.value))}
+        />
       </div>
 
       <div className="set-group">

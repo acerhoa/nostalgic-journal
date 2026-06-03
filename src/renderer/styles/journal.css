@@ -16,36 +16,48 @@
   --page-w: 392px;
   --page-h: 520px;
   --panel-w: 312px;
+  --panel-h: 520px;                        /* fixed panel height, does not resize */
   --tuck: 48px;                            /* how far a panel hides under journal */
   --flip-ms: 720ms;
 }
 
 *{ box-sizing: border-box; }
-html,body{ margin:0; height:100%; }
+html,body{ margin:0; height:100%; background: transparent !important; }
 body{
-  font-family: var(--font-ui);
-  /* translucent "desktop" so the journal reads as floating */
-  background:
-    radial-gradient(120% 90% at 50% 8%, var(--desk-1), var(--desk-2) 78%);
+  font-family: var(--font-write);
+  background: transparent !important;
   overflow:hidden;
   -webkit-font-smoothing: antialiased;
 }
 
-/* ---------- scaling stage ---------- */
-.viewport{ position:fixed; inset:0; }
+/* Draggable region for frameless window */
+.drag-region {
+  -webkit-app-region: drag;
+}
+.drag-region button,
+.drag-region input {
+  -webkit-app-region: no-drag;
+}
+
+/* ---------- layout stage ---------- */
+.viewport{ position:fixed; inset:0; background: rgba(100,100,100,0.5); /* TEMP: for testing window bounds */ }
 .scene{
-  position:absolute; left:50%; top:50%;
-  width:1440px; height:780px;
-  transform-origin:center center;
-  transform: translate(-50%,-50%);
+  position:relative;
+  width: 100%;
+  height: 100%;
+  background: transparent;
 }
 
 /* ============================================================
    THE JOURNAL  (fixed centre, never animates)
    ============================================================ */
 .journal{
-  position:absolute; left:328px; top:150px;
-  width:784px; height:var(--page-h);
+  position:absolute;
+  left:50%;
+  top:70px;
+  transform: translateX(-50%);
+  width:calc(var(--page-w) * 2);
+  height:var(--page-h);
   display:flex;
   border-radius:14px;
   z-index:20;
@@ -123,13 +135,19 @@ div.sheet{ white-space:pre-wrap; word-break:break-word; overflow:hidden; }
   transition:transform var(--flip-ms) cubic-bezier(.42,.02,.18,1);
 }
 .flip-leaf.active{ display:block; }
-.flip-leaf.--next{ left:392px; transform-origin:left center; }   /* right leaf, spine on its left  */
+.flip-leaf.--next{ left:var(--page-w); transform-origin:left center; }   /* right leaf, spine on its left  */
 .flip-leaf.--prev{ left:0;     transform-origin:right center; }  /* left leaf, spine on its right */
 .flip-leaf .face{
   position:absolute; inset:0;
   backface-visibility:hidden;
+  background: linear-gradient(180deg, var(--paper) 0%, var(--paper-2) 100%);
+  padding:34px 30px 26px;
+  display:flex; flex-direction:column;
+  overflow:hidden;
 }
-.flip-leaf .face.back{ transform:rotateY(180deg); }
+.flip-leaf .face.back{
+  transform: rotateY(180deg) scaleX(-1);
+}
 .flip-leaf.--next .face.front{ border-radius:4px 14px 14px 4px; }
 .flip-leaf.--next .face.back { border-radius:14px 4px 4px 14px; }
 .flip-leaf.--prev .face.front{ border-radius:14px 4px 4px 14px; }
@@ -143,49 +161,77 @@ div.sheet{ white-space:pre-wrap; word-break:break-word; overflow:hidden; }
 .flip-leaf.active .shade{ animation:shadePulse var(--flip-ms) ease both; }
 @keyframes shadePulse{ 0%{opacity:0} 48%{opacity:.55} 100%{opacity:0} }
 
-/* the bookmark tab */
+/* the bookmark tab (draggable header) */
 .tab{
-  position:absolute; left:50%; top:118px; transform:translateX(-50%);
+  position:absolute; left:50%; top:16px; transform:translateX(-50%);
   background:var(--accent); color:var(--on-accent);
-  font-family:var(--font-write); font-weight:600; font-size:18px; white-space:nowrap;
-  padding:9px 24px 12px; border-radius:10px 10px 4px 4px;
-  z-index:24; box-shadow:0 6px 14px var(--shadow-soft);
+  font-weight:600; font-size:16px; white-space:nowrap;
+  padding:10px 24px; border-radius:11px;
+  height: 42px;
+  display: flex; align-items: center; justify-content: center;
+  z-index:24; box-shadow:0 4px 12px var(--shadow-soft);
   letter-spacing:.3px; user-select:none;
+  cursor: move;
 }
 
 /* ============================================================
-   CONTROLS — pinned just outside the journal's corners
+   CONTROLS — grouped containers for button positioning
+   Buttons align with journal edges (inside the page area).
    ============================================================ */
+.controls-right {
+  position: absolute;
+  top: 16px;
+  left: calc(50% - var(--page-w));
+  display: flex;
+  gap: 8px;
+  z-index: 30;
+}
+
+.controls-left {
+  position: absolute;
+  top: 16px;
+  right: calc(50% - var(--page-w));
+  display: flex;
+  gap: 8px;
+  z-index: 30;
+}
+
 .btn{
-  position:absolute; z-index:30;
+  position:relative; z-index:30;
   display:flex; align-items:center; justify-content:center;
   background:var(--chrome); color:var(--chrome-ink);
   border:1px solid var(--chrome-edge);
   cursor:pointer; padding:0;
-  box-shadow:0 6px 16px var(--shadow-soft);
-  transition:transform .15s ease, background .2s ease, color .2s ease;
+  box-shadow:0 4px 12px var(--shadow-soft);
+  transition:transform .15s ease, background .2s ease, color .2s ease, opacity .2s ease;
+  opacity: 0.5;
 }
-.btn:hover{ transform:translateY(-2px); }
-.btn:active{ transform:translateY(0); }
-.btn.square{ width:46px; height:46px; border-radius:13px; }
-.btn.round{  width:48px; height:48px; border-radius:50%; }
-.btn.is-on{ background:var(--accent); color:var(--on-accent); border-color:var(--accent); }
-.btn svg{ width:22px; height:22px; }
+.btn:hover{ transform:translateY(-2px); opacity: 0.85; }
+.btn:active{ transform:translateY(0); opacity: 1; }
+.btn.square{ width:42px; height:42px; border-radius:11px; }
+.btn.round{  width:44px; height:44px; border-radius:50%; position:absolute; }
+.btn.is-on{ background:var(--accent); color:var(--on-accent); border-color:var(--accent); opacity: 0.9; }
+.btn svg{ width:20px; height:20px; }
 
-/* menu above top-left corner, calculator above top-right corner */
-#btn-cal { left:244px; top:96px; }
-#btn-set { left:298px; top:96px; }
-#btn-calc{ left:1118px; top:96px; }
-/* arrows beside the bottom corners */
-#btn-prev{ left:262px;  top:616px; }
-#btn-next{ left:1130px; top:616px; }
+/* arrows beside the bottom corners of journal */
+#btn-prev{
+  left: calc(50% - var(--page-w) - 56px);
+  top: calc(70px + var(--page-h) - 48px);
+}
+#btn-next{
+  right: calc(50% - var(--page-w) - 56px);
+  top: calc(70px + var(--page-h) - 48px);
+}
 
 /* ============================================================
    SLIDE-OUT PANELS  (z below journal, emerge from under it)
    ============================================================ */
 .panel{
-  position:absolute; top:150px;
+  position:absolute;
+  top:70px;
   width:var(--panel-w);
+  height:auto;
+  max-height:var(--panel-h);
   background:var(--panel);
   color:var(--panel-ink);
   border-radius:16px;
@@ -193,9 +239,18 @@ div.sheet{ white-space:pre-wrap; word-break:break-word; overflow:hidden; }
   z-index:8;
   transition:transform var(--flip-ms) cubic-bezier(.22,.61,.36,1);
   padding:16px;
+  overflow-y: auto;
 }
-.panel.left { left:64px;   transform:translateX(312px); padding-right:62px; }   /* hidden under journal */
-.panel.right{ left:1064px; transform:translateX(-312px); padding-left:62px; }
+.panel.left {
+  right: calc(50% + var(--page-w) - 48px);
+  transform:translateX(312px);
+  padding-right:62px;
+}
+.panel.right{
+  left: calc(50% + var(--page-w) - 48px);
+  transform:translateX(-312px);
+  padding-left:62px;
+}
 
 .panel h3{
   margin:0 0 8px; font-family:var(--font-ui); font-weight:700;
@@ -364,4 +419,168 @@ div.sheet{ white-space:pre-wrap; word-break:break-word; overflow:hidden; }
   --chrome:#322642; --chrome-ink:#c3a6d6; --chrome-edge:#42334f;
   --panel:#291f33; --panel-ink:#e7ddf0; --key:#322641;
   --shadow:rgba(0,0,0,.55); --shadow-soft:rgba(0,0,0,.4);
+}
+
+/* ============================================================
+   RESIZE HANDLES — bottom corners of journal (subtle diagonal lines)
+   ============================================================ */
+.resize-handle {
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  z-index: 25;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+.journal:hover .resize-handle { opacity: 1; }
+.resize-bl {
+  bottom: 4px;
+  left: 4px;
+  cursor: nesw-resize;
+}
+.resize-br {
+  bottom: 4px;
+  right: 4px;
+  cursor: nwse-resize;
+}
+.resize-handle::before,
+.resize-handle::after {
+  content: '';
+  position: absolute;
+  background: var(--ink-soft);
+  border-radius: 1px;
+}
+.resize-br::before {
+  width: 10px; height: 2px;
+  bottom: 2px; right: 0;
+  transform: rotate(-45deg);
+  transform-origin: right bottom;
+}
+.resize-br::after {
+  width: 6px; height: 2px;
+  bottom: 6px; right: 0;
+  transform: rotate(-45deg);
+  transform-origin: right bottom;
+}
+.resize-bl::before {
+  width: 10px; height: 2px;
+  bottom: 2px; left: 0;
+  transform: rotate(45deg);
+  transform-origin: left bottom;
+}
+.resize-bl::after {
+  width: 6px; height: 2px;
+  bottom: 6px; left: 0;
+  transform: rotate(45deg);
+  transform-origin: left bottom;
+}
+.resize-handle:hover::before,
+.resize-handle:hover::after { background: var(--accent); }
+
+/* ============================================================
+   PRETTY SCROLLBARS
+   ============================================================ */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb {
+  background: var(--accent-soft);
+  border-radius: 4px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
+/* Scrollbars in panels and calculator history */
+.panel::-webkit-scrollbar-thumb,
+.calc-hist::-webkit-scrollbar-thumb {
+  background: var(--ink-soft);
+  border-radius: 4px;
+}
+.panel::-webkit-scrollbar-thumb:hover,
+.calc-hist::-webkit-scrollbar-thumb:hover {
+  background: var(--accent);
+}
+
+/* ============================================================
+   TITLE INPUT IN SETTINGS
+   ============================================================ */
+.title-input {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1px solid var(--chrome-edge);
+  border-radius: 10px;
+  background: var(--key);
+  color: var(--panel-ink);
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+.title-input:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px var(--accent-soft);
+}
+.title-input::placeholder {
+  color: var(--ink-soft);
+}
+
+/* ============================================================
+   TEXT SIZE SLIDER
+   ============================================================ */
+.size-slider {
+  width: 100%;
+  height: 6px;
+  border-radius: 3px;
+  background: var(--key);
+  outline: none;
+  -webkit-appearance: none;
+  appearance: none;
+  cursor: pointer;
+}
+.size-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  box-shadow: 0 2px 6px var(--shadow-soft);
+  transition: transform 0.15s ease;
+}
+.size-slider::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+.size-slider::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--accent);
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 6px var(--shadow-soft);
+}
+
+/* ============================================================
+   FONT EXCEPTIONS — these use system UI font, not selected font
+   ============================================================ */
+.font-opt,
+.ckey,
+.calc-val,
+.calc-expr,
+.cal-cell,
+.dow {
+  font-family: var(--font-ui) !important;
 }
